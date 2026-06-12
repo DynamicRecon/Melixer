@@ -37,11 +37,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
     'rest_framework',
     'books'
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',  # ← Must be at the TOP
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -86,6 +88,11 @@ DATABASES = {
     }
 }
 
+# Allow React dev server
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",   # Create React App
+    "http://localhost:5173",   # Vite
+]
 
 
 # Password validation

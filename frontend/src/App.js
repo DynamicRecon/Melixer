@@ -1,25 +1,25 @@
-import logo from './logo.svg';
-import './App.css';
+import { Routes, Route } from "react-router-dom";
+import Navbar from "./components/Navbar";
+import Home from "./components/Home";
+import BookInventory from "./components/BookInventory";
+import BookDetail from "./components/BookDetail";
+import AddBook from "./components/AddBook";
+import QuickScan from "./components/QuickScan";
 
 function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+    return (
+        <div>
+            <Navbar />
+            <Routes>
+                <Route path="/"             element={<Home />} />
+                <Route path="/inventory"    element={<BookInventory />} />
+                <Route path="/books/:id"    element={<BookDetail />} />  {/* ← Add this */}
+                <Route path="/add"          element={<AddBook />} />
+                <Route path="/scan"         element={<QuickScan />} />
+                <Route path="*"             element={<h2 style={{ textAlign: "center" }}>404 - Page Not Found</h2>} />
+            </Routes>
+        </div>
+    );
 }
 
 export default App;
