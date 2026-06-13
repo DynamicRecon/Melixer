@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-gobg+0&n=fi&18_6hyqe*td4y#h%ad*ofc9a*$e+n*a)y^obd_
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["127.0.0.1", "localhost", "ExperimentsDB"]
 
 
 # Application definition
@@ -83,7 +83,7 @@ DATABASES = {
         'NAME': 'Melixer',
         'USER': 'PrincessDonut',
         'PASSWORD': 'X6BjaFIp_tg7F5pRrGIzg8KK68gHu4ojA4weM0xRdyY',
-        'HOST': '10.0.0.249',
+        'HOST': '127.0.0.1',
         'PORT': '3306',
     }
 }
@@ -91,7 +91,10 @@ DATABASES = {
 # Allow React dev server
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",   # Create React App
+    "http://127.0.0.1:3000",   # Create React App
     "http://localhost:5173",   # Vite
+    "http://127.0.0.1:5173",   # Vite
+    "http://ExperimentsDB", #server request.
 ]
 
 
