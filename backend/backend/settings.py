@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-gobg+0&n=fi&18_6hyqe*td4y#h%ad*ofc9a*$e+n*a)y^obd_
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["127.0.0.1", "localhost", "melixer.roseweb.local"]
+ALLOWED_HOSTS = ["127.0.0.1", "localhost", "roseweb.local" "melixer.roseweb.local"]
 
 
 # Application definition
@@ -95,6 +95,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",   # Vite
     "http://127.0.0.1:5173",   # Vite
     "http://melixer.roseweb.local:8000", #server request.
+    "http://roseweb.local:8000",
+    "http://10.0.0.249:8000"
 ]
 
 
