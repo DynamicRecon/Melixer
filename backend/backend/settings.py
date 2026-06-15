@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-gobg+0&n=fi&18_6hyqe*td4y#h%ad*ofc9a*$e+n*a)y^obd_
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["127.0.0.1", "localhost", "Melixer.local"]
+ALLOWED_HOSTS = ["127.0.0.1", "localhost", "melixer.roseweb.local"]
 
 
 # Application definition
@@ -94,7 +94,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",   # Create React App
     "http://localhost:5173",   # Vite
     "http://127.0.0.1:5173",   # Vite
-    "http://Melixer.local:8000", #server request.
+    "http://melixer.roseweb.local:8000", #server request.
 ]
 
 
