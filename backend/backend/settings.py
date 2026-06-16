@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-gobg+0&n=fi&18_6hyqe*td4y#h%ad*ofc9a*$e+n*a)y^obd_
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["127.0.0.1", "localhost", "roseweb.local" "melixer.roseweb.local"]
+ALLOWED_HOSTS = ["127.0.0.1", "localhost", "roseweb.local", "melixer.roseweb.local"]
 
 
 # Application definition
