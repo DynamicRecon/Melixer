@@ -15,35 +15,55 @@ const AddBook = () => {
     });
 
     // Lookup book info from Open Library using ISBN
-    const fetchBookInfo = useCallback(async (isbn) => {
-        setScanning(false);
-        setLoading(true);
-        try {
-            const { data } = await axios.get(
-                `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`
-            );
-            const book = data[`ISBN:${isbn}`];
-            if (book) {
-                setForm((prev) => ({
-                    ...prev,
-                    isbn,
-                    title: book.title || "",
-                    author: book.authors?.[0]?.name || "",
-                    publisher: book.publishers?.[0]?.name || "",
-                    publication_year: book.publish_date?.slice(-4) || "",
-                    pages: book.number_of_pages || "",
-                    cover_image: book.cover?.large || "",
-                }));
-            } else {
-                alert("Book not found. Please fill in manually.");
-                setForm((prev) => ({ ...prev, isbn }));
-            }
-        } catch (err) {
-            alert("Error looking up ISBN.");
-        } finally {
-            setLoading(false);
+   const fetchBookInfo = useCallback(async (isbn) => {
+    setScanning(false);
+    setLoading(true);
+    try {
+        // New endpoint
+        const { data } = await axios.get(
+            `https://openlibrary.org/isbn/${isbn}.json`
+        );
+
+        if (!data) {
+            alert("Book not found. Please fill in manually.");
+            setForm((prev) => ({ ...prev, isbn }));
+            return;
         }
-    }, []);
+
+        // Fetch author separately
+        let authorName = "";
+        if (data.authors && data.authors.length > 0) {
+            const authorKey = data.authors[0].key;
+            const authorRes = await axios.get(
+                `https://openlibrary.org${authorKey}.json`
+            );
+            authorName = authorRes.data.name || "";
+        }
+
+        // Cover image
+        const coverId = data.covers?.[0];
+        const coverUrl = coverId
+            ? `https://covers.openlibrary.org/b/id/${coverId}-L.jpg`
+            : "";
+
+        setForm((prev) => ({
+            ...prev,
+            isbn,
+            title: data.title || "",
+            author: authorName,
+            publisher: data.publishers?.[0] || "",
+            publication_year: data.publish_date?.slice(-4) || "",
+            pages: data.number_of_pages || "",
+            cover_image: coverUrl,
+        }));
+
+    } catch (err) {
+        alert("Book not found or error looking up ISBN.");
+        setForm((prev) => ({ ...prev, isbn }));
+    } finally {
+        setLoading(false);
+    }
+}, []);
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;

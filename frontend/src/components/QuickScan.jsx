@@ -5,124 +5,129 @@ import { createBook } from "../api/books";
 
 const QuickScan = () => {
     const [scanning, setScanning] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [form, setForm] = useState({
-        title: "", author: "", publisher: "",
-        publication_year: "", isbn: "", genre: "",
-        language: "English", pages: "", cover_image: "",
-        read_status: "unread", format: "paperback",
-        condition: "good", is_owned: true, is_favorite: false,
-    });
+    const [status, setStatus] = useState(null); // 'loading' | 'saving' | 'success' | 'error' | 'notfound'
+    const [lastBook, setLastBook] = useState(null);
 
-    // Lookup book info from Open Library using ISBN
-    const fetchBookInfo = useCallback(async (isbn) => {
-        setScanning(false);
-        setLoading(true);
-        try {
-            const { data } = await axios.get(
-                `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`
+    const handleScanned = useCallback(async (isbn) => {
+    setScanning(false);
+    setStatus("loading");
+
+    try {
+        // Step 1 — Fetch book data from new endpoint
+        const { data } = await axios.get(
+            `https://openlibrary.org/isbn/${isbn}.json`
+        );
+
+        if (!data) {
+            setStatus("notfound");
+            return;
+        }
+
+        // Step 2 — Author is a separate API call in the new endpoint
+        let authorName = "";
+        if (data.authors && data.authors.length > 0) {
+            const authorKey = data.authors[0].key; // e.g. "/authors/OL23919A"
+            const authorRes = await axios.get(
+                `https://openlibrary.org${authorKey}.json`
             );
-            const book = data[`ISBN:${isbn}`];
-            if (book) {
-                setForm((prev) => ({
-                    ...prev,
-                    isbn,
-                    title: book.title || "",
-                    author: book.authors?.[0]?.name || "",
-                    publisher: book.publishers?.[0]?.name || "",
-                    publication_year: book.publish_date?.slice(-4) || "",
-                    pages: book.number_of_pages || "",
-                    cover_image: book.cover?.large || "",
-                }));
-            } else {
-                alert("Book not found. Please fill in manually.");
-                setForm((prev) => ({ ...prev, isbn }));
-            }
-        } catch (err) {
-            alert("Error looking up ISBN.");
-        } finally {
-            setLoading(false);
+            authorName = authorRes.data.name || "";
         }
-    }, []);
 
-    const handleChange = (e) => {
-        const { name, value, type, checked } = e.target;
-        setForm((prev) => ({
-            ...prev,
-            [name]: type === "checkbox" ? checked : value,
-        }));
-    };
+        // Step 3 — Cover image via covers API
+        const coverId = data.covers?.[0];
+        const coverUrl = coverId
+            ? `https://covers.openlibrary.org/b/id/${coverId}-L.jpg`
+            : "";
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            await createBook(form);
-            alert("Book added to Melixer!");
-            setForm({
-                title: "", author: "", publisher: "",
-                publication_year: "", isbn: "", genre: "",
-                language: "English", pages: "", cover_image: "",
-                read_status: "unread", format: "paperback",
-                condition: "good", is_owned: true, is_favorite: false,
-            });
-        } catch (err) {
-            alert("Error saving book.");
-        }
+        // Step 4 — Build book object
+        const newBook = {
+            title: data.title || "",
+            author: authorName,
+            publisher: data.publishers?.[0] || "",
+            publication_year: data.publish_date?.slice(-4) || null,
+            isbn: isbn,
+            pages: data.number_of_pages || null,
+            cover_image: coverUrl,
+            language: "English",
+            read_status: "unread",
+            format: "paperback",
+            condition: "good",
+            is_owned: true,
+            is_favorite: false,
+        };
+
+        setStatus("saving");
+
+        // Step 5 — Auto submit to Django API
+        await createBook(newBook);
+        setLastBook(newBook);
+        setStatus("success");
+
+    } catch (err) {
+        console.error(err);
+        setStatus("error");
+    }
+}, []);
+
+    const handleScanAnother = () => {
+        setStatus(null);
+        setLastBook(null);
+        setScanning(true);
     };
 
     return (
         <div>
-            <h2>Add a Book</h2>
+            <h2>Quick Scan</h2>
+            <p>Scan a book's ISBN barcode to instantly add it to Melixer.</p>
 
-            <button onClick={() => setScanning(!scanning)}>
-                {scanning ? "Cancel Scan" : "📷 Scan ISBN Barcode"}
-            </button>
+            {/* Status Messages */}
+            {status === "loading" && <p>🔍 Looking up ISBN...</p>}
+            {status === "saving" && <p>💾 Saving to Melixer...</p>}
+            {status === "notfound" && (
+                <div>
+                    <p>⚠️ Book not found in Open Library.</p>
+                    <button onClick={handleScanAnother}>Try Another</button>
+                </div>
+            )}
+            {status === "error" && (
+                <div>
+                    <p>❌ Something went wrong. Please try again.</p>
+                    <button onClick={handleScanAnother}>Try Again</button>
+                </div>
+            )}
+            {status === "success" && lastBook && (
+                <div>
+                    <p>✅ Added to Melixer!</p>
+                    {lastBook.cover_image && (
+                        <img
+                            src={lastBook.cover_image}
+                            alt={lastBook.title}
+                            style={{ width: "100px" }}
+                        />
+                    )}
+                    <p><strong>{lastBook.title}</strong></p>
+                    <p>{lastBook.author}</p>
+                    <button onClick={handleScanAnother}>Scan Another</button>
+                </div>
+            )}
 
-            {scanning && <ISBNScanner onScanned={fetchBookInfo} />}
-            {loading && <p>Looking up ISBN...</p>}
-
-            <form onSubmit={handleSubmit}>
-                <input name="title" placeholder="Title" value={form.title} onChange={handleChange} required />
-                <input name="author" placeholder="Author" value={form.author} onChange={handleChange} required />
-                <input name="publisher" placeholder="Publisher" value={form.publisher} onChange={handleChange} />
-                <input name="publication_year" placeholder="Year" value={form.publication_year} onChange={handleChange} />
-                <input name="isbn" placeholder="ISBN" value={form.isbn} onChange={handleChange} />
-                <input name="genre" placeholder="Genre" value={form.genre} onChange={handleChange} />
-                <input name="pages" placeholder="Pages" value={form.pages} onChange={handleChange} />
-                <input name="cover_image" placeholder="Cover Image URL" value={form.cover_image} onChange={handleChange} />
-
-                <select name="read_status" value={form.read_status} onChange={handleChange}>
-                    <option value="unread">Unread</option>
-                    <option value="reading">Currently Reading</option>
-                    <option value="finished">Finished</option>
-                </select>
-
-                <select name="format" value={form.format} onChange={handleChange}>
-                    <option value="hardcover">Hardcover</option>
-                    <option value="paperback">Paperback</option>
-                    <option value="ebook">eBook</option>
-                    <option value="audiobook">Audiobook</option>
-                </select>
-
-                <select name="condition" value={form.condition} onChange={handleChange}>
-                    <option value="new">New</option>
-                    <option value="good">Good</option>
-                    <option value="fair">Fair</option>
-                    <option value="poor">Poor</option>
-                </select>
-
-                <label>
-                    <input type="checkbox" name="is_owned" checked={form.is_owned} onChange={handleChange} />
-                    Owned
-                </label>
-
-                <label>
-                    <input type="checkbox" name="is_favorite" checked={form.is_favorite} onChange={handleChange} />
-                    Favorite
-                </label>
-
-                <button type="submit">Add to Melixer</button>
-            </form>
+            {/* Scanner */}
+            {!status && (
+                <>
+                    {!scanning ? (
+                        <button onClick={() => setScanning(true)}>
+                            📷 Start Scanning
+                        </button>
+                    ) : (
+                        <>
+                            <button onClick={() => setScanning(false)}>
+                                Cancel
+                            </button>
+                            <ISBNScanner onScanned={handleScanned} />
+                        </>
+                    )}
+                </>
+            )}
         </div>
     );
 };
