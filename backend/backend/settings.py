@@ -94,9 +94,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",   # Create React App
     "http://localhost:5173",   # Vite
     "http://127.0.0.1:5173",   # Vite
-    "http://melixer.roseweb.local:3443", #server request.
-    "http://roseweb.local:3443",
-    "http://10.0.0.249:3443"
+    "https://melixer.roseweb.local", #server request.
+    "https://10.0.0.249"
 ]
 
 # Tell Django it's behind HTTPS
