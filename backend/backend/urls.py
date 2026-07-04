@@ -19,5 +19,6 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('Melixer/auth/', include('authentication.urls')),
     path('Melixer/', include('books.urls')),
 ]

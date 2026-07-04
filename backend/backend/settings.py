@@ -39,8 +39,19 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework',
-    'books'
+    'rest_framework.authtoken',
+    'books',
+    'authentication',
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',  # ← Protect all endpoints
+    ],
+}
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',  # ← Must be at the TOP
@@ -84,6 +95,14 @@ DATABASES = {
         'USER': 'PrincessDonut',
         'PASSWORD': 'X6BjaFIp_tg7F5pRrGIzg8KK68gHu4ojA4weM0xRdyY',
         'HOST': '127.0.0.1',
+        'PORT': '3306',
+    },
+    'development': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'Melixer',
+        'USER': 'carl_dev',
+        'PASSWORD': '*tBh_Ybxm.~::Zo',
+        'HOST': 'roseweb.local',
         'PORT': '3306',
     }
 }
