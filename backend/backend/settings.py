@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -96,16 +97,10 @@ DATABASES = {
         'PASSWORD': 'X6BjaFIp_tg7F5pRrGIzg8KK68gHu4ojA4weM0xRdyY',
         'HOST': '127.0.0.1',
         'PORT': '3306',
-    },
-    'development': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'Melixer',
-        'USER': 'carl_dev',
-        'PASSWORD': '*tBh_Ybxm.~::Zo',
-        'HOST': 'roseweb.local',
-        'PORT': '3306',
     }
 }
+
+
 
 # Allow React dev server
 CORS_ALLOWED_ORIGINS = [
@@ -116,6 +111,8 @@ CORS_ALLOWED_ORIGINS = [
     "https://melixer.roseweb.local", #server request.
     "https://10.0.0.249"
 ]
+
+CORS_URLS_REGEX = r'^/api/.*$'
 
 # Tell Django it's behind HTTPS
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

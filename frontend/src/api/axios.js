@@ -1,11 +1,25 @@
 import axios from 'axios';
 
-var hostname = window.location.hostname;
-
-const isLocalhost = ['localhost', '127.0.0.1'].includes(hostname);
-
 const API = axios.create({
-    baseURL: isLocalhost ? 'http://127.0.0.1:8000/Melixer' : "https://melixer.roseweb.local:3443/Melixer",
+    baseURL: import.meta.env.REACT_APP_API_URL,
+});
+
+API.interceptors.request.use((config) => {
+    const token = localStorage.getItem('melixer_token');
+    if(token) {
+        config.headers.Authorization = `Token ${token}`;
+    }
+    return config;
+});
+
+API.interceptors.response.use((response) => response,
+(error) => {
+    if(error.response?.status == 401) {
+        localStorage.removeItem('melixer_token');
+        localStorage.removeItem('melixer_user');
+        window.location.href = '/login';
+    }
+    return Promise.reject(error);
 });
 
 export default API;

@@ -1,7 +1,22 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from '../context/AuthContext';
+import API from '../api/axios'
 
 const NavBar = () => {
     const location = useLocation(); // Tells you the current URL path
+    const navigate = useNavigate();
+    const { user, logout } = useAuth();
+
+    const handleLogout = async () => {
+        try {
+            await API.post('/auth/logout/')
+        } catch (err) {
+            console.warn("Logout error: ", err)
+        } finally {
+            logout();
+            navigate("/login");
+        }
+    }
 
     const linkStyle = (path) => ({
         textDecoration: "none",
@@ -33,6 +48,24 @@ const NavBar = () => {
             <Link to="/inventory" style={linkStyle("/inventory")}>My Library</Link>
             <Link to="/scan"      style={linkStyle("/scan")}>📷 Quick Scan</Link>
             <Link to="/add"       style={linkStyle("/add")}>+ Add Book</Link>
+
+            {/* User info + logout */}
+             <div style={{ marginLeft: "16px", display: "flex", alignItems: "center", gap: "10px" }}>
+                <span style={{ fontSize: "0.85rem", color: "#888" }}>
+                    👤 {user?.username}
+                </span>
+                <button
+                    onClick={handleLogout}
+                    style={{
+                        background: "#fff0f0", color: "#e74c3c",
+                        border: "1px solid #f5c6cb", borderRadius: "8px",
+                        padding: "8px 14px", cursor: "pointer",
+                        fontSize: "0.85rem", fontWeight: "600"
+                    }}
+                >
+                    Sign Out
+                </button>
+            </div>
         </nav>
     );
 };
