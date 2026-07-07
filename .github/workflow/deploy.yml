@@ -1,65 +1,78 @@
-name: Melixer Hybrid Deployment
+name: Deploy Melixer
 
 on:
   push:
-    branches: 
-      - master
-      - release
+    branches:
+      - main
+  workflow_dispatch:  # Allows manual trigger from GitHub UI
 
 jobs:
-   deploy:
-     runs-on: Ubuntu 22.04.5 LTS
-     steps:
-       - name: Checkout code:
-         uses: actions/checkout@v4
-       
-       #Build React.js
-       - name: Setup Node.js
-         working-directory: ./frontend
-         run: |
-          npm install
-          npm run Build
-      
-      - name: Setup Python (Django)
-        uses: actions/setup-python@v5
-        with:
-          version: '3.13'
+  deploy:
+    name: Build and Deploy Melixer
+    runs-on: self-hosted   # ← Uses your intranet server runner
 
-      - name: Run Django Tests & Collect STATIC
-        working-directory: ./Backend
+    steps:
+
+      # Step 1 — Checkout latest code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2 — Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      # Step 3 — Install React dependencies
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      # Step 4 — Create production .env
+      - name: Create frontend .env.production
+        working-directory: frontend
         run: |
-            python -m pip install --upgrade pip
-            pip install -r requirements.txt
-            python manage.py test 
-            python manage.py collectstatic --noinput
-      
-      #SCP ONLY THE STATIC FRONTEND FILES TO SERVER
-      - name: SCP React Build Dir to SERVER
-        uses: dynamicrecon/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "frontent/build/*"
-          target: "/var/www/melixer"
-          strip_components: 2
-      
-      #DJANGO BACK DEPLOYMENT
-      - name: Update Backend via SSH
-        uses: dynamicrecon/scp-actions@v1.0.3
-        with:
-           host: ${{ secrets.SERVER_HOST }}
-           username: ${{ secrets.SERVER_USER }}
-           key: ${{ secrets.SSH_PRIVATE_KEY }}
-           scripts: |
-             cd /var/www/melixer/Backend
-             git pull origin master
-             source venv/bin/activate
-             pip install -r ../requirements.txt
-             python manage.py migrate
-             python manage.py collectstatic --noinput
-             sudo systemctl restart apache2
+          echo "REACT_APP_API_URL=https://melixer.roseweb.local/api" > .env.production
 
+      # Step 5 — Build React app
+      - name: Build React frontend
+        working-directory: frontend
+        run: npm run build
 
+      # Step 6 — Copy React build to Apache web root
+      - name: Deploy frontend build to web root
+        run: |
+          sudo rm -rf /var/www/melixer/*
+          sudo cp -r frontend/build/* /var/www/melixer/
+          sudo chown -R www-data:www-data /var/www/melixer/
+          sudo chmod -R 755 /var/www/melixer/
 
+      # Step 7 — Install Python dependencies
+      - name: Install Python dependencies
+        run: |
+          source /path/to/your/project/venv/bin/activate
+          pip install -r backend/requirements.txt
 
+      # Step 8 — Run Django migrations
+      - name: Run Django migrations
+        run: |
+          source /path/to/your/project/venv/bin/activate
+          cd backend
+          python manage.py migrate --settings=myproject.settings
+
+      # Step 9 — Collect static files
+      - name: Collect Django static files
+        run: |
+          source /path/to/your/project/venv/bin/activate
+          cd backend
+          python manage.py collectstatic --noinput --settings=myproject.settings
+
+      # Step 10 — Restart Apache
+      - name: Restart Apache
+        run: sudo systemctl restart apache2
+
+      # Step 11 — Verify Apache is running
+      - name: Verify Apache status
+        run: sudo systemctl status apache2 --no-pager
