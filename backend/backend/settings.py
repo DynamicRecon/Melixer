@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+from decouple import config
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -21,12 +22,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-gobg+0&n=fi&18_6hyqe*td4y#h%ad*ofc9a*$e+n*a)y^obd_'
+SECRET_KEY = config('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DJANGO_DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = ["127.0.0.1", "localhost", "roseweb.local", "melixer.roseweb.local"]
+ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS').split(',')
 
 
 # Application definition
@@ -91,12 +92,12 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'Melixer',
-        'USER': 'PrincessDonut',
-        'PASSWORD': 'X6BjaFIp_tg7F5pRrGIzg8KK68gHu4ojA4weM0xRdyY',
-        'HOST': '127.0.0.1',
-        'PORT': '3306',
+        'ENGINE':   'django.db.backends.mysql',
+        'NAME':     config('DB_NAME'),
+        'USER':     config('DB_USER'),
+        'PASSWORD': config('DB_PASSWORD'),
+        'HOST':     config('DB_HOST', default='localhost'),
+        'PORT':     config('DB_PORT', default='3306'),
     }
 }
 
@@ -104,12 +105,9 @@ DATABASES = {
 
 # Allow React dev server
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",   # Create React App
-    "http://127.0.0.1:3000",   # Create React App
-    "http://localhost:5173",   # Vite
-    "http://127.0.0.1:5173",   # Vite
-    "https://melixer.roseweb.local", #server request.
-    "https://10.0.0.249"
+   "https://melixer.roseweb.local:3443",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
 ]
 
 CORS_URLS_REGEX = r'^/api/.*$'

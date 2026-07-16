@@ -1,0 +1,70 @@
+version: "3.9"
+
+services:
+  # MySQL Database
+  db:
+    image: mysql:8.0
+    container_name: melixer_prod
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - melixer_db_data:/var/lib/mysql
+    networks:
+      - melixer_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Django + Gunicorn
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: melixer_backend
+    restart: always
+    env_file: .env.docker
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - melixer_static:/app/staticfiles
+    networks:
+      - melixer_network
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             gunicorn --bind 0.0.0.0:8000 --workers 3 myproject.wsgi:application"
+
+  # Nginx + React
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        REACT_APP_API_URL: ${REACT_APP_API_URL}
+    container_name: melixer_frontend
+    restart: always
+    ports:
+      - "80:80"
+      - "3443:3443"
+    depends_on:
+      - backend
+    volumes:
+      - melixer_static:/app/staticfiles:ro
+      - ./nginx/certs:/etc/ssl/certs:ro
+    networks:
+      - melixer_network
+
+volumes:
+  melixer_db_data:
+  melixer_static:
+
+networks:
+  melixer_network:
+    driver: bridge

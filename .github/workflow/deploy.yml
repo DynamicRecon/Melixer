@@ -4,75 +4,64 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:  # Allows manual trigger from GitHub UI
+  workflow_dispatch:
 
 jobs:
   deploy:
-    name: Build and Deploy Melixer
-    runs-on: self-hosted   # ← Uses your intranet server runner
+    name: Build and Deploy
+    runs-on: self-hosted
 
     steps:
-
-      # Step 1 — Checkout latest code
+      # Step 1 — Checkout code
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2 — Setup Node.js
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-
-      # Step 3 — Install React dependencies
-      - name: Install frontend dependencies
-        working-directory: frontend
-        run: npm ci
-
-      # Step 4 — Create production .env
-      - name: Create frontend .env.production
-        working-directory: frontend
+      # Step 2 — Copy SSL certs into nginx/certs
+      - name: Setup SSL certs
         run: |
-          echo "REACT_APP_API_URL=https://melixer.roseweb.local/api" > .env.production
+          mkdir -p nginx/certs
+          sudo cp /etc/ssl/certs/melixer.crt nginx/certs/melixer.crt
+          sudo cp /etc/ssl/private/melixer.key nginx/certs/melixer.key
 
-      # Step 5 — Build React app
-      - name: Build React frontend
-        working-directory: frontend
-        run: npm run build
-
-      # Step 6 — Copy React build to Apache web root
-      - name: Deploy frontend build to web root
+      # Step 3 — Create .env.docker from GitHub Secrets
+      - name: Create .env.docker
         run: |
-          sudo rm -rf /var/www/melixer/*
-          sudo cp -r frontend/build/* /var/www/melixer/
-          sudo chown -R www-data:www-data /var/www/melixer/
-          sudo chmod -R 755 /var/www/melixer/
+          cat > .env.docker << EOF
+          DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET }}
+          DJANGO_DEBUG=False
+          DJANGO_ALLOWED_HOSTS=melixer.roseweb.local,localhost
+          DB_NAME=${{ secrets.DB_NAME }}
+          DB_USER=${{ secrets.DB_USER }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          DB_HOST=${{ secrets.DB_HOST }}
+          DB_PORT=3306
+          REACT_APP_API_URL=https://melixer.roseweb.local:3443/api
+          EOF
 
-      # Step 7 — Install Python dependencies
-      - name: Install Python dependencies
+      # Step 4 — Pull latest images
+      - name: Pull latest base images
+        run: docker compose pull --ignore-buildable
+
+      # Step 5 — Build Docker images
+      - name: Build Docker images
+        run: docker compose build --no-cache
+
+      # Step 6 — Stop existing containers
+      - name: Stop existing containers
+        run: docker compose down --remove-orphans
+
+      # Step 7 — Start new containers
+      - name: Start containers
+        run: docker compose up -d
+
+      # Step 8 — Verify containers are running
+      - name: Verify deployment
         run: |
-          source /path/to/your/project/venv/bin/activate
-          pip install -r backend/requirements.txt
+          sleep 10
+          docker compose ps
+          docker compose logs --tail=20 backend
+          docker compose logs --tail=20 frontend
 
-      # Step 8 — Run Django migrations
-      - name: Run Django migrations
-        run: |
-          source /path/to/your/project/venv/bin/activate
-          cd backend
-          python manage.py migrate --settings=myproject.settings
-
-      # Step 9 — Collect static files
-      - name: Collect Django static files
-        run: |
-          source /path/to/your/project/venv/bin/activate
-          cd backend
-          python manage.py collectstatic --noinput --settings=myproject.settings
-
-      # Step 10 — Restart Apache
-      - name: Restart Apache
-        run: sudo systemctl restart apache2
-
-      # Step 11 — Verify Apache is running
-      - name: Verify Apache status
-        run: sudo systemctl status apache2 --no-pager
+      # Step 9 — Cleanup old images
+      - name: Cleanup old Docker images
+        run: docker image prune -f
