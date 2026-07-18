@@ -141,3 +141,7 @@ pnpm-debug.log*
 *.swp
 .DS_Store
 Thumbs.db
+
+#remove any enviroment variables
+.env
+.env.docker

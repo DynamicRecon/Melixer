@@ -1,37 +1,37 @@
 FROM python:3.12-slim
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+RUN mkdir /app
+WORKDIR /app
 
-# Install system dependencies for mysqlclient
+# Create non-root user
+RUN useradd -m -r appuser && chown -R appuser /app
+
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
     default-libmysqlclient-dev \
     pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
-# Set work directory
-WORKDIR /app
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 # Install Python dependencies
-COPY backend/requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
+RUN pip install --upgrade pip
+COPY requirements.txt /app/requirements.txt
+RUN pip install -r requirements.txt
 
 # Copy Django project
-COPY backend/ .
+COPY backend/ /app
+COPY docker.django.entrypoint.sh /app/docker.django.entrypoint.sh
+RUN chmod +x /app/docker.django.entrypoint.sh
 
-# Collect static files
-RUN python manage.py collectstatic --noinput
+# Switch to non-root user
+USER appuser
 
 # Expose Gunicorn port
-EXPOSE 8000
+EXPOSE 3443
 
 # Start Gunicorn
-CMD ["gunicorn", \
-     "--bind", "0.0.0.0:8000", \
-     "--workers", "3", \
-     "--timeout", "120", \
-     "--access-logfile", "-", \
-     "--error-logfile", "-", \
-     "myproject.wsgi:application"]
+CMD ["/app/docker.django.entrypoint.sh"]

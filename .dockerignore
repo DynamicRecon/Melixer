@@ -1,0 +1,16 @@
+# .dockerignore
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.env.prod
+.env.dev
+.env.development
+.env.production
+frontend/node_modules/
+frontend/build/
+.git/
+.github/
+*.md
