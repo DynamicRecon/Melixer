@@ -31,7 +31,7 @@ RUN chmod +x /app/docker.django.entrypoint.sh
 USER appuser
 
 # Expose Gunicorn port
-EXPOSE 3443
+EXPOSE 8000
 
 # Start Gunicorn
 CMD ["/app/docker.django.entrypoint.sh"]

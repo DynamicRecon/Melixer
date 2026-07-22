@@ -145,3 +145,5 @@ Thumbs.db
 #remove any enviroment variables
 .env
 .env.docker
+.env.prod
+.env.dev

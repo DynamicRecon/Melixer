@@ -105,18 +105,19 @@ DATABASES = {
 
 # Allow React dev server
 CORS_ALLOWED_ORIGINS = [
-   "https://melixer.roseweb.local:3443",
+    "https://melixer.roseweb.local",
+    "https://localhost",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
 
-CORS_URLS_REGEX = r'^/api/.*$'
+CORS_URLS_REGEX = r'^/Melixer/.*$'
 
 # Tell Django it's behind HTTPS
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 CSRF_TRUSTED_ORIGINS = [
-    "https://melixer.roseweb.local:3443",
-    "https://melixer.roseweb.local"
+    "https://melixer.roseweb.local",
+    "https://localhost"
 ]
 
 
